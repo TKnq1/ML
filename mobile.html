@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Phone Scale - Sensor</title>
-   
+    
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -158,7 +158,6 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-
         const urlParams = new URLSearchParams(window.location.search);
         const roomId = urlParams.get('room');
 
@@ -234,20 +233,13 @@
             if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
         }
 
-        socket.on('handy-set-step-1', () => {
-            setStep1();
-        });
-
-        socket.on('handy-set-step-2', () => {
-            setStep2();
-        });
+        socket.on('handy-set-step-1', () => { setStep1(); });
+        socket.on('handy-set-step-2', () => { setStep2(); });
 
         let lastSend = 0;
-
         function handleOrientation(event) {
             let x = event.beta || 0;
             let y = event.gamma || 0;
-
             dataDisplay.innerHTML = `${x.toFixed(2)}°`;
 
             const now = Date.now();
@@ -258,26 +250,17 @@
         }
 
         let wakeLock = null;
-
         async function requestWakeLock() {
             try {
                 if ('wakeLock' in navigator) {
                     wakeLock = await navigator.wakeLock.request('screen');
-                    console.log('Wake Lock active!');
                 }
-            } catch (err) {
-                console.error(`Wake Lock error: ${err.message}`);
-            }
+            } catch (err) { console.error(`Wake Lock error: ${err.message}`); }
         }
 
-        startBtn.addEventListener('click', () => {
-            requestWakeLock();
-        });
-
+        startBtn.addEventListener('click', () => { requestWakeLock(); });
         document.addEventListener('visibilitychange', async () => {
-            if (wakeLock !== null && document.visibilityState === 'visible') {
-                requestWakeLock();
-            }
+            if (wakeLock !== null && document.visibilityState === 'visible') { requestWakeLock(); }
         });
     </script>
 </body>
