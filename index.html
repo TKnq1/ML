@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monitor Leveler Pro</title>
     
-    <link rel="icon" type="image/png" href="Gemini_Generated_Image_x7b8x4x7b8x4x7b8.pngv=2">
-    
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -34,6 +32,7 @@
         .app-header {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
             margin-bottom: 25px;
         }
@@ -52,14 +51,6 @@
             justify-content: center;
             gap: 12px;
             margin-bottom: 8px;
-        }
-
-        /* Styling für dein echtes Logo auf der Website */
-        .brand-logo-img {
-            width: 50px;
-            height: 50px;
-            object-fit: contain;
-            margin-bottom: 4px;
         }
 
         h1 {
@@ -267,13 +258,12 @@
 <body>
 
     <div class="container">
-        <div class="app-header" style="justify-content: center;">
+        <div class="app-header">
             <div class="status-dot"></div>
             <span style="font-size: 11px; color: #868e96; text-transform: uppercase; letter-spacing: 0.5px;">Live Server Connected</span>
         </div>
 
         <div class="brand-header">
-            <img src="favicon.png" alt="Monitor Leveler Pro Logo" class="brand-logo-img">
             <h1>Monitor Leveler <span class="badge-pro">Pro</span></h1>
         </div>
         <div class="subtitle">Scan the QR code with your phone to connect</div>
@@ -308,7 +298,7 @@
 
     <div id="diagnose-modal" class="modal-overlay">
         <div class="modal-content">
-            <span id="modal-icon" class="result-icon">✨</span>
+            <span id="modal-icon" class="result-icon"></span>
             <h2 style="margin-top: 0; color: #1c7ed6; font-size: 20px; font-weight: 600;">Alignment Analysis</h2>
             <p style="color: #868e96; font-size: 13px; margin-bottom: 20px;">Comparison between desk surface and monitor</p>
             
@@ -348,14 +338,12 @@
     const angleDisplay = document.getElementById('angle-display');
     const caliBtn = document.getElementById('cali-btn');
     const qrContainer = document.getElementById('qrcode');
-
     const diagnoseModal = document.getElementById('diagnose-modal');
     const modalTableVal = document.getElementById('modal-table-val');
     const modalMonitorVal = document.getElementById('modal-monitor-val');
     const modalDiffVal = document.getElementById('modal-diff-val');
     const modalVerdict = document.getElementById('modal-verdict');
     const closeModalBtn = document.getElementById('close-modal-btn');
-
     const progressContainer = document.getElementById('progress-container');
     const progressBar = document.getElementById('progress-bar');
     const modalIcon = document.getElementById('modal-icon');
@@ -387,7 +375,6 @@
         }
 
         let finalX = currentRawX;
-
         if (isCalibrated) {
             let diff = currentRawX - tableX;
             if (diff > 45) diff -= 90;
@@ -396,7 +383,6 @@
         }
 
         angleDisplay.innerText = `${finalX.toFixed(2)}°`;
-        
         targetXPos = 50 + (finalX * 5); 
         targetXPos = Math.max(3, Math.min(97, targetXPos));
 
@@ -430,99 +416,77 @@
 
     caliBtn.addEventListener('click', () => {
         if (isCollectingSnapshot) return; 
-
         if (!isCalibrated) {
             caliBtn.innerText = "Measuring Desk Surface... ⏳";
             caliBtn.style.backgroundColor = "#e9ecef";
             caliBtn.style.color = "#495057";
-            
             progressContainer.style.display = "block";
             progressBar.style.backgroundColor = "#1c7ed6";
             setTimeout(() => { progressBar.style.width = "100%"; }, 10);
-            
             snapshotBuffer = [];
             isCollectingSnapshot = true;
-
             setTimeout(() => {
                 isCollectingSnapshot = false;
                 tableX = getAverage(snapshotBuffer); 
                 isCalibrated = true;
-                
                 progressContainer.style.display = "none";
                 progressBar.style.width = "0%";
-
                 caliBtn.innerText = "2. Align on Monitor";
                 caliBtn.style.backgroundColor = "#2b8a3e";
                 caliBtn.style.color = "#ffffff";
-
                 socket.emit('pc-step-2');
             }, 500);
-
         } else {
             caliBtn.innerText = "Measuring Monitor... ⏳";
             caliBtn.style.backgroundColor = "#e9ecef";
             caliBtn.style.color = "#495057";
-
             progressContainer.style.display = "block";
             progressBar.style.backgroundColor = "#2b8a3e";
             setTimeout(() => { progressBar.style.width = "100%"; }, 10);
-
             snapshotBuffer = [];
             isCollectingSnapshot = true;
-
             setTimeout(() => {
                 isCollectingSnapshot = false;
-                
                 progressContainer.style.display = "none";
                 progressBar.style.width = "0%";
-
                 const monitorX = getAverage(snapshotBuffer); 
                 let diff = monitorX - tableX;
                 if (diff > 45) diff -= 90;
                 if (diff < -45) diff += 90;
-
                 modalTableVal.innerText = `${tableX.toFixed(2)}°`;
                 modalMonitorVal.innerText = `${monitorX.toFixed(2)}°`;
                 modalDiffVal.innerText = `${Math.abs(diff).toFixed(2)}°`;
-
                 if (Math.abs(diff) < 0.50) {
-                    modalIcon.innerText = "✅";
+                    modalIcon.innerText = ""; // Kein Icon mehr
                     modalDiffVal.style.color = "#2b8a3e";
                     modalVerdict.innerText = "Perfect! Your monitor is perfectly parallel to the desk.";
                 } else if (Math.abs(diff) < 1.20) {
-                    modalIcon.innerText = "⚠️";
+                    modalIcon.innerText = ""; // Kein Icon mehr
                     modalDiffVal.style.color = "#e67e22";
                     modalVerdict.innerText = "Slightly tilted. A minor nudge to the " + (diff > 0 ? "right" : "left") + " should do it.";
                 } else {
-                    modalIcon.innerText = "❌";
+                    modalIcon.innerText = ""; // Kein Icon mehr
                     modalDiffVal.style.color = "#e03131";
                     modalVerdict.innerText = "Significantly tilted! Please adjust the monitor's alignment.";
                 }
-
                 if (diagnoseModal) { diagnoseModal.classList.add('active'); }
             }, 500);
         }
     });
 
-    if (closeModalBtn) {
-        closeModalBtn.addEventListener('click', () => {
-            if (diagnoseModal) { diagnoseModal.classList.remove('active'); }
-            
-            isCalibrated = false;
-
-            caliBtn.innerText = "1. Place on Desk & Zero Out";
-            caliBtn.style.backgroundColor = "#1c7ed6";
-            caliBtn.style.color = "#ffffff";
-
-            socket.emit('pc-step-1'); 
-        });
-    }
+    closeModalBtn.addEventListener('click', () => {
+        if (diagnoseModal) { diagnoseModal.classList.remove('active'); }
+        isCalibrated = false;
+        caliBtn.innerText = "1. Place on Desk & Zero Out";
+        caliBtn.style.backgroundColor = "#1c7ed6";
+        caliBtn.style.color = "#ffffff";
+        socket.emit('pc-step-1'); 
+    });
 
     const legalModal = document.getElementById('legal-modal');
     const legalTitle = document.getElementById('legal-title');
     const legalText = document.getElementById('legal-text');
     const closeLegalBtn = document.getElementById('close-legal-btn');
-
     const impressumInhalt = `**Legal Notice (Impressum)**\n\nTeethawat Kanpai\nSonnenscheinpfad 64\n12277, Berlin, Germany\n\n**Contact:**\nE-Mail: teethawatkanpai@gmail.com\nPhone: +49 172 4134526\n\nResponsible for content under Section 5 Abs. 1 DDG:\nTeethawat Kanpai (Address above)`;
     const datenschutzInhalt = `**Privacy Policy**\n\n**1. General Information**\nThe operators of this website take the protection of your personal data very seriously. We treat your personal data confidentially and in accordance with statutory data protection regulations.\n\n**2. Data Collection on Our Website**\nOur application uses WebSockets to transfer the real-time sensor measurements from your smartphone to your PC. During this process, IP addresses are processed temporarily to assign both devices to the same measurement session. No data is stored permanently, logged, or analyzed.\n\n**3. Hosting (Render)**\nThis website is hosted by an external service provider (Render.com). Personal data processed on this website is handled on the host's servers. This primarily includes IP addresses, as well as technical meta and communication data necessary for secure app architecture.`;
 
