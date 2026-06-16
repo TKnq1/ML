@@ -28,11 +28,40 @@
             border: 1px solid #e9ecef;
         }
 
-        h1 {
-            font-size: 22px;
-            font-weight: 600;
+        .app-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 25px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background-color: #2b8a3e;
+            border-radius: 50%;
+        }
+
+        .brand-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
             margin-bottom: 5px;
+        }
+
+        .brand-logo {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
             color: #1a1d20;
+            letter-spacing: -0.5px;
         }
 
         .subtitle {
@@ -174,20 +203,6 @@
             transition: background-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
         }
 
-        .app-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 15px;
-        }
-
-        .status-dot {
-            width: 6px;
-            height: 6px;
-            background-color: #2b8a3e;
-            border-radius: 50%;
-        }
-
         .app-footer {
             margin-top: 30px;
             font-size: 11px;
@@ -236,7 +251,10 @@
             <span style="font-size: 11px; color: #868e96; text-transform: uppercase; letter-spacing: 0.5px;">Live Server Connected</span>
         </div>
 
-        <h1>Monitor Leveler <span style="color: #1c7ed6; font-size: 12px; vertical-align: super; font-weight: normal;">PRO</span></h1>
+        <div class="brand-header">
+            <img src="logo.png" alt="Monitor Leveler Pro Logo" class="brand-logo" onerror="this.style.display='none'">
+            <h1>Monitor Leveler <span style="color: #1c7ed6; font-size: 12px; vertical-align: super; font-weight: normal;">PRO</span></h1>
+        </div>
         <div class="subtitle">Scan the QR code with your phone to connect</div>
 
         <div class="qr-box" id="qrcode">
@@ -469,15 +487,12 @@
         closeModalBtn.addEventListener('click', () => {
             if (diagnoseModal) { diagnoseModal.classList.remove('active'); }
             
-            // 1. Kalibrierung zurücksetzen, damit es wieder von vorne losgeht
             isCalibrated = false;
 
-            // 2. Button-Text und Farbe wieder auf Schritt 1 setzen
-            caliBtn.innerText = "1. Auf Tisch legen & Nullen";
+            caliBtn.innerText = "1. Place on Desk & Zero Out";
             caliBtn.style.backgroundColor = "#1c7ed6";
             caliBtn.style.color = "#ffffff";
 
-            // 3. Dem Server sagen, dass das Handy wieder auf Schritt 1 springen soll
             socket.emit('pc-step-1'); 
         });
     }
