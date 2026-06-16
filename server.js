@@ -3,72 +3,86 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http, {
     cors: {
-        origin: "*", // Erlaubt Verbindungen von allen Geräten (Handy & PC)
+        origin: "*",
         methods: ["GET", "POST"]
     }
 });
 const path = require('path');
+const QRCode = require('qrcode');
 
-// Port-Zuweisung: Nutzt den Port von Render (process.env.PORT) oder lokal 3000
 const PORT = process.env.PORT || 3000;
 
-// Statische Dateien erlauben (falls du Bilder/Logos im selben Ordner hast)
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname)));
 
-// ROUTE 1: PC-Ansicht (Startseite)
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// ROUTE 2: Handy-Ansicht
 app.get('/mobile', (req, res) => {
     res.sendFile(path.join(__dirname, 'mobile.html'));
 });
 
-// WebSockets Kommunikation
 io.on('connection', (socket) => {
-    console.log('Ein Gerät hat sich verbunden:', socket.id);
-
-    // Raum beitreten (wichtig für die QR-Code Zuordnung)
-    socket.on('join-room', (roomId) => {
+    
+    socket.on('register-pc', async () => {
+        const roomId = Math.random().toString(36).substring(2, 8).toUpperCase(); 
         socket.join(roomId);
-        console.log(`Gerät ${socket.id} ist Raum beigetreten: ${roomId}`);
-    });
+        socket.roomId = roomId;
+        console.log(`PC registered in session room: ${roomId}`);
 
-    // Sensordaten vom Handy empfangen und an den PC im selben Raum weiterleiten
-    socket.on('sensor-data', (data) => {
-        // Falls ein Raum-Kontext mitgesendet wird, nutzen wir diesen
-        if (data.room) {
-            socket.to(data.room).emit('pc-receive-data', data);
-        } else {
-            // Ausweichlösung: An alle Räume senden, in denen das Handy ist
-            const rooms = Array.from(socket.rooms);
-            rooms.forEach(room => {
-                if (room !== socket.id) {
-                    socket.to(room).emit('pc-receive-data', data);
-                }
-            });
+        const referer = socket.handshake.headers.referer;
+        let baseUrl = `http://localhost:${PORT}`;
+
+        if (referer) {
+            try {
+                const urlObj = new URL(referer);
+                baseUrl = urlObj.origin; 
+            } catch (e) {
+                console.error("Referer parsing error, relying on default fallback link configuration.");
+            }
+        }
+
+        const mobileUrl = `${baseUrl}/mobile?room=${roomId}`;
+        console.log(`Generating QR code link destination: ${mobileUrl}`);
+
+        try {
+            const qrDataUrl = await QRCode.toDataURL(mobileUrl);
+            socket.emit('init-pc', { roomId, qrCode: qrDataUrl });
+            console.log(`QR code successfully dispatched to room instance ${roomId}.`);
+        } catch (err) {
+            console.error('QR code generation unexpected failure:', err);
         }
     });
 
-    // Befehl vom PC: Schritt 1 auf dem Handy aktivieren
-    socket.on('pc-trigger-step-1', (roomId) => {
-        io.to(roomId).emit('handy-set-step-1');
+    socket.on('join-room', (roomId) => {
+        socket.join(roomId);
+        socket.roomId = roomId; 
+        console.log(`Mobile controller unit connected to room session: ${roomId}`);
     });
 
-    // Befehl vom PC: Schritt 2 auf dem Handy aktivieren
-    socket.on('pc-trigger-step-2', (roomId) => {
-        io.to(roomId).emit('handy-set-step-2');
+    socket.on('sensor-data', (data) => {
+        if (socket.roomId) {
+            socket.to(socket.roomId).emit('update-monitor', data);
+        }
+    });
+
+    socket.on('pc-step-1', () => {
+        if (socket.roomId) {
+            socket.to(socket.roomId).emit('handy-set-step-1');
+        }
+    });
+
+    socket.on('pc-step-2', () => {
+        if (socket.roomId) {
+            socket.to(socket.roomId).emit('handy-set-step-2');
+        }
     });
 
     socket.on('disconnect', () => {
-        console.log('Verbindung getrennt:', socket.id);
+        console.log('A telemetry node has disconnected from the active socket architecture.');
     });
 });
 
-// Server starten
 http.listen(PORT, () => {
-    console.log(`=============================================`);
-    console.log(`   Monitor Leveler Server läuft auf Port ${PORT} `);
-    console.log(`=============================================`);
+    console.log(`Application server running and listening on port environment target: ${PORT}`);
 });
