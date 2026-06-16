@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Phone Scale - Sensor</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f1f3f5;
+            color: #212529;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .status-card {
+            background: #ffffff;
+            padding: 35px 25px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 350px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #1a1d20;
+        }
+
+        .instruction-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #dee2e6;
+            font-size: 14px;
+            line-height: 1.4;
+            color: #495057;
+            transition: all 0.3s ease;
+        }
+
+        .btn-start {
+            background-color: #1c7ed6;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-start:hover {
+            background-color: #1a72c4;
+        }
+
+        .live-data {
+            font-family: monospace;
+            font-size: 32px;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #1c7ed6;
+            transition: color 0.3s ease;
+        }
+
+        .status-text {
+            color: #868e96;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+            transition: color 0.3s ease;
+        }
+
+        /* Large Prominent Vertical Alignment Guide Line */
+        .alignment-line {
+            position: fixed; 
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px; 
+            height: 100%;
+            background: linear-gradient(to bottom, #1c7ed6 20%, transparent 20%, transparent 80%, #1c7ed6 80%);
+            z-index: 9999; 
+            pointer-events: none; 
+            display: none; 
+            box-shadow: 0 0 15px rgba(28, 126, 214, 0.4); 
+        }
+
+        /* Large High-Contrast Directional Labels */
+        .line-label {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px; 
+            font-weight: 800; 
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: white;
+            background: #1c7ed6; 
+            padding: 6px 14px;
+            border-radius: 20px; 
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            white-space: nowrap;
+        }
+        .line-label.top { top: 25px; }
+        .line-label.bottom { bottom: 25px; }
+
+        /* Turn alignment guide vibrant GREEN during step 2 execution */
+        .status-card.step2-active ~ .alignment-line {
+            background: linear-gradient(to bottom, #2b8a3e 20%, transparent 20%, transparent 80%, #2b8a3e 80%);
+            box-shadow: 0 0 20px rgba(43, 138, 62, 0.6); 
+        }
+        
+        .status-card.step2-active ~ .alignment-line .line-label {
+            background: #2b8a3e; 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="alignment-line" id="guide-line">
+        <span class="line-label top">↑ Align Edge Here ↑</span>
+        <span class="line-label bottom">↓ Align Edge Here ↓</span>
+    </div>
+
+    <div class="status-card" id="card">
+        <h2>Monitor Leveler</h2>
+        
+        <div class="instruction-box" id="instruction">
+            Please activate your smartphone's sensors first.
+        </div>
+
+        <p class="status-text" id="status">Sensors Inactive</p>
+        
+        <div class="live-data" id="data-display">
+            0.00°
+        </div>
+
+        <button class="btn-start" id="start-btn">Activate Sensors</button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('room');
+
+        if (roomId) {
+            socket.emit('join-room', roomId);
+        } else {
+            alert("No room ID discovered! Please scan the QR code again.");
+        }
+
+        const startBtn = document.getElementById('start-btn');
+        const statusText = document.getElementById('status');
+        const dataDisplay = document.getElementById('data-display');
+        const instructionBox = document.getElementById('instruction');
+        const card = document.getElementById('card');
+
+        let sensorsActive = false;
+
+        startBtn.addEventListener('click', () => {
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === 'granted') {
+                            initSensors();
+                        } else {
+                            instructionBox.innerText = "Access denied. Please grant sensor access in your browser settings.";
+                        }
+                    })
+                    .catch(error => {
+                        console.error(error);
+                        instructionBox.innerText = "Error requesting sensor permissions.";
+                    });
+            } else {
+                initSensors();
+            }
+        });
+
+        function initSensors() {
+            window.addEventListener('deviceorientation', handleOrientation);
+            sensorsActive = true;
+            startBtn.style.display = 'none';
+            setStep1();
+        }
+
+        function setStep1() {
+            if (!sensorsActive) return;
+            statusText.innerText = "Step 1 Active";
+            statusText.style.color = "#1c7ed6";
+            dataDisplay.style.color = "#1c7ed6";
+            card.style.borderColor = "#1c7ed6";
+            card.classList.remove('step2-active'); 
+            
+            document.getElementById('guide-line').style.display = 'none';
+
+            instructionBox.style.borderColor = "rgba(28, 126, 214, 0.3)";
+            instructionBox.innerHTML = "<strong>👉 Step 1:</strong> Place your phone <strong>flat and steady</strong> on your desk surface, then click 'Zero Out' on your PC.";
+            
+            if (navigator.vibrate) navigator.vibrate(50);
+        }
+
+        function setStep2() {
+            if (!sensorsActive) return;
+            statusText.innerText = "Step 2 Active";
+            statusText.style.color = "#2b8a3e";
+            dataDisplay.style.color = "#2b8a3e";
+            card.style.borderColor = "#2b8a3e";
+            card.classList.add('step2-active'); 
+            
+            document.getElementById('guide-line').style.display = 'block';
+
+            instructionBox.style.borderColor = "rgba(43, 138, 62, 0.3)";
+            instructionBox.innerHTML = "<strong>👉 Step 2:</strong> Pick up your phone and hold it <strong>vertically against the top edge</strong> of your monitor. Align the monitor edge with the center line.";
+            
+            if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+        }
+
+        socket.on('handy-set-step-1', () => {
+            setStep1();
+        });
+
+        socket.on('handy-set-step-2', () => {
+            setStep2();
+        });
+
+        let lastSend = 0;
+
+        function handleOrientation(event) {
+            let x = event.beta || 0;
+            let y = event.gamma || 0;
+
+            dataDisplay.innerHTML = `${x.toFixed(2)}°`;
+
+            const now = Date.now();
+            if (now - lastSend > 25) { 
+                socket.emit('sensor-data', { x: x, y: y });
+                lastSend = now;
+            }
+        }
+
+        let wakeLock = null;
+
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Wake Lock active!');
+                }
+            } catch (err) {
+                console.error(`Wake Lock error: ${err.message}`);
+            }
+        }
+
+        startBtn.addEventListener('click', () => {
+            requestWakeLock();
+        });
+
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                requestWakeLock();
+            }
+        });
+    </script>
+</body>
+</html>

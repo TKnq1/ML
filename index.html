@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor Leveler Pro</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f1f3f5;
+            color: #212529;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            text-align: center;
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            max-width: 500px;
+            width: 90%;
+            border: 1px solid #e9ecef;
+        }
+
+        h1 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #1a1d20;
+        }
+
+        .subtitle {
+            color: #868e96;
+            font-size: 13px;
+            margin-bottom: 30px;
+        }
+
+        .qr-box {
+            width: 140px;
+            height: 140px;
+            background: #f8f9fa;
+            margin: 0 auto 30px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+        }
+
+        .qr-box img {
+            width: 100%;
+            height: 100%;
+        }
+
+        .slider-track {
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            margin: 35px 0;
+            position: relative;
+        }
+
+        .slider-center {
+            position: absolute;
+            left: 50%;
+            top: -5px;
+            width: 2px;
+            height: 16px;
+            background: #ced4da;
+            transform: translateX(-50%);
+        }
+
+        .slider-indicator {
+            width: 20px;
+            height: 20px;
+            background-color: #2b8a3e;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 8px rgba(43, 138, 62, 0.3);
+            will-change: left;
+        }
+
+        .display-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border: 1px solid #dee2e6;
+        }
+
+        #angle-display {
+            font-size: 42px;
+            font-weight: 700;
+            font-family: monospace;
+            color: #2b8a3e;
+            margin: 0;
+            letter-spacing: -1px;
+        }
+
+        .axis-label {
+            color: #868e96;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 5px;
+        }
+
+        button {
+            background-color: #1c7ed6;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #1a72c4;
+        }
+
+        .modal-overlay {
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(241, 243, 245, 0.4);
+            backdrop-filter: blur(0px);
+            z-index: 1000; 
+            align-items: center; 
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            background: rgba(33, 37, 41, 0.3);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: #ffffff; 
+            padding: 30px; 
+            border-radius: 16px; 
+            border: 1px solid #e9ecef; 
+            max-width: 420px; 
+            width: 90%; 
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+            transform: scale(0.95);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .smooth-color {
+            transition: background-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background-color: #2b8a3e;
+            border-radius: 50%;
+        }
+
+        .app-footer {
+            margin-top: 30px;
+            font-size: 11px;
+            color: #adb5bd;
+        }
+
+        .app-footer a {
+            color: #868e96;
+            text-decoration: none;
+            margin: 0 8px;
+        }
+
+        .app-footer a:hover {
+            color: #1c7ed6;
+        }
+
+        .btn-progress-container {
+            width: 100%;
+            height: 3px;
+            background: #e9ecef;
+            border-radius: 1.5px;
+            margin-top: 8px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .btn-progress-bar {
+            width: 0%;
+            height: 100%;
+            background: #1c7ed6;
+            transition: width 0.5s linear;
+        }
+
+        .result-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="app-header" style="justify-content: center;">
+            <div class="status-dot"></div>
+            <span style="font-size: 11px; color: #868e96; text-transform: uppercase; letter-spacing: 0.5px;">Live Server Connected</span>
+        </div>
+
+        <h1>Monitor Leveler <span style="color: #1c7ed6; font-size: 12px; vertical-align: super; font-weight: normal;">PRO</span></h1>
+        <div class="subtitle">Scan the QR code with your phone to connect</div>
+
+        <div class="qr-box" id="qrcode">
+            <span style="color: #adb5bd; font-size: 11px;">Generating QR...</span>
+        </div>
+
+        <div class="display-box">
+            <p id="angle-display" class="smooth-color">0.00°</p>
+            <div class="axis-label">Horizontal Tilt (X-Axis)</div>
+        </div>
+
+        <div class="slider-track">
+            <div class="slider-center"></div>
+            <div class="slider-indicator smooth-color" id="indicator"></div>
+        </div>
+
+        <div style="width: 100%; max-width: 320px; margin: 0 auto;">
+            <button id="cali-btn">1. Place on Desk & Zero Out</button>
+            <div class="btn-progress-container" id="progress-container">
+                <div class="btn-progress-bar" id="progress-bar"></div>
+            </div>
+        </div>
+
+        <div class="app-footer">
+            <span>&copy; 2026 Monitor Leveler Pro</span>
+            <a href="javascript:void(0)" id="link-impressum">Legal Notice</a>|
+            <a href="javascript:void(0)" id="link-datenschutz">Privacy Policy</a>
+        </div>
+    </div>
+
+    <div id="diagnose-modal" class="modal-overlay">
+        <div class="modal-content">
+            <span id="modal-icon" class="result-icon">✨</span>
+            <h2 style="margin-top: 0; color: #1c7ed6; font-size: 20px; font-weight: 600;">Alignment Analysis</h2>
+            <p style="color: #868e96; font-size: 13px; margin-bottom: 20px;">Comparison between desk surface and monitor</p>
+            
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #e9ecef;">
+                <span style="color: #495057; font-size: 13px;">Baseline Value (Desk):</span>
+                <span id="modal-table-val" style="font-family: monospace; font-weight: bold; color: #212529;">0.00°</span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #e9ecef;">
+                <span style="color: #495057; font-size: 13px;">Current Value (Monitor):</span>
+                <span id="modal-monitor-val" style="font-family: monospace; font-weight: bold; color: #2b8a3e;">0.00°</span>
+            </div>
+            
+            <hr style="border: 0; border-top: 1px solid #e9ecef; margin: 15px 0;">
+            
+            <div style="background: rgba(28, 126, 214, 0.05); padding: 15px; border-radius: 8px; border: 1px solid rgba(28, 126, 214, 0.15); margin-bottom: 20px;">
+                <div style="font-size: 11px; color: #1c7ed6; text-transform: uppercase; letter-spacing: 0.5px;">Deviation (Difference)</div>
+                <div id="modal-diff-val" style="font-size: 28px; font-weight: bold; font-family: monospace; color: #e03131; margin-top: 5px;">0.00°</div>
+                <p id="modal-verdict" style="font-size: 12px; color: #495057; margin: 8px 0 0 0;">Calculating deviation...</p>
+            </div>
+            
+            <button id="close-modal-btn" style="background-color: #495057; color: white;">Close & Continue Adjusting</button>
+        </div>
+    </div>
+
+    <div id="legal-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 550px; text-align: left; max-height: 75vh; overflow-y: auto;">
+            <h2 id="legal-title" style="color: #1c7ed6; margin-top: 0; font-size: 20px;">Legal Information</h2>
+            <div id="legal-text" style="color: #495057; font-size: 13px; line-height: 1.5; white-space: pre-line;"></div>
+            <button id="close-legal-btn" style="background-color: #495057; color: white; margin-top: 15px;">Close</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+    const indicator = document.getElementById('indicator');
+    const angleDisplay = document.getElementById('angle-display');
+    const caliBtn = document.getElementById('cali-btn');
+    const qrContainer = document.getElementById('qrcode');
+
+    const diagnoseModal = document.getElementById('diagnose-modal');
+    const modalTableVal = document.getElementById('modal-table-val');
+    const modalMonitorVal = document.getElementById('modal-monitor-val');
+    const modalDiffVal = document.getElementById('modal-diff-val');
+    const modalVerdict = document.getElementById('modal-verdict');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('progress-bar');
+    const modalIcon = document.getElementById('modal-icon');
+
+    const socket = io();
+    socket.emit('register-pc');
+
+    socket.on('init-pc', (data) => {
+        if (qrContainer) {
+            qrContainer.innerHTML = `<img src="${data.qrCode}" alt="QR Code">`;
+        }
+    });
+
+    let tableX = 0;
+    let isCalibrated = false;
+    let currentRawX = 0;
+    let snapshotBuffer = [];
+    let isCollectingSnapshot = false;
+    let targetXPos = 50;
+    let currentXPos = 50;
+
+    socket.on('update-monitor', (data) => {
+        let rawX = data.x;
+        if (rawX > 0) { rawX = 180 - rawX; } else { rawX = -180 - rawX; }
+        currentRawX = -rawX; 
+
+        if (isCollectingSnapshot) {
+            snapshotBuffer.push(currentRawX);
+        }
+
+        let finalX = currentRawX;
+
+        if (isCalibrated) {
+            let diff = currentRawX - tableX;
+            if (diff > 45) diff -= 90;
+            if (diff < -45) diff += 90;
+            finalX = diff;
+        }
+
+        angleDisplay.innerText = `${finalX.toFixed(2)}°`;
+        
+        targetXPos = 50 + (finalX * 5); 
+        targetXPos = Math.max(3, Math.min(97, targetXPos));
+
+        let checkValue = Math.abs(finalX);
+        if (checkValue < 0.50) { 
+            angleDisplay.style.color = "#2b8a3e"; 
+            indicator.style.backgroundColor = "#2b8a3e";
+            indicator.style.boxShadow = "0 2px 8px rgba(43, 138, 62, 0.3)";
+        } else if (checkValue < 1.20) { 
+            angleDisplay.style.color = "#e67e22"; 
+            indicator.style.backgroundColor = "#e67e22";
+            indicator.style.boxShadow = "0 2px 8px rgba(230, 126, 34, 0.3)";
+        } else {
+            angleDisplay.style.color = "#e03131"; 
+            indicator.style.backgroundColor = "#e03131";
+            indicator.style.boxShadow = "0 2px 8px rgba(224, 49, 49, 0.3)";
+        }
+    });
+
+    function draw() {
+        currentXPos += (targetXPos - currentXPos) * 0.15;
+        if (indicator) { indicator.style.left = `${currentXPos}%`; }
+        requestAnimationFrame(draw);
+    }
+    requestAnimationFrame(draw);
+
+    function getAverage(arr) {
+        if (arr.length === 0) return currentRawX;
+        return arr.reduce((a, b) => a + b, 0) / arr.length;
+    }
+
+    caliBtn.addEventListener('click', () => {
+        if (isCollectingSnapshot) return; 
+
+        if (!isCalibrated) {
+            caliBtn.innerText = "Measuring Desk Surface... ⏳";
+            caliBtn.style.backgroundColor = "#e9ecef";
+            caliBtn.style.color = "#495057";
+            
+            progressContainer.style.display = "block";
+            progressBar.style.backgroundColor = "#1c7ed6";
+            setTimeout(() => { progressBar.style.width = "100%"; }, 10);
+            
+            snapshotBuffer = [];
+            isCollectingSnapshot = true;
+
+            setTimeout(() => {
+                isCollectingSnapshot = false;
+                tableX = getAverage(snapshotBuffer); 
+                isCalibrated = true;
+                
+                progressContainer.style.display = "none";
+                progressBar.style.width = "0%";
+
+                caliBtn.innerText = "2. Align on Monitor";
+                caliBtn.style.backgroundColor = "#2b8a3e";
+                caliBtn.style.color = "#ffffff";
+
+                socket.emit('pc-step-2');
+            }, 500);
+
+        } else {
+            caliBtn.innerText = "Measuring Monitor... ⏳";
+            caliBtn.style.backgroundColor = "#e9ecef";
+            caliBtn.style.color = "#495057";
+
+            progressContainer.style.display = "block";
+            progressBar.style.backgroundColor = "#2b8a3e";
+            setTimeout(() => { progressBar.style.width = "100%"; }, 10);
+
+            snapshotBuffer = [];
+            isCollectingSnapshot = true;
+
+            setTimeout(() => {
+                isCollectingSnapshot = false;
+                
+                progressContainer.style.display = "none";
+                progressBar.style.width = "0%";
+
+                const monitorX = getAverage(snapshotBuffer); 
+                let diff = monitorX - tableX;
+                if (diff > 45) diff -= 90;
+                if (diff < -45) diff += 90;
+
+                modalTableVal.innerText = `${tableX.toFixed(2)}°`;
+                modalMonitorVal.innerText = `${monitorX.toFixed(2)}°`;
+                modalDiffVal.innerText = `${Math.abs(diff).toFixed(2)}°`;
+
+                if (Math.abs(diff) < 0.50) {
+                    modalIcon.innerText = "✅";
+                    modalDiffVal.style.color = "#2b8a3e";
+                    modalVerdict.innerText = "Perfect! Your monitor is perfectly parallel to the desk.";
+                } else if (Math.abs(diff) < 1.20) {
+                    modalIcon.innerText = "⚠️";
+                    modalDiffVal.style.color = "#e67e22";
+                    modalVerdict.innerText = "Slightly tilted. A minor nudge to the " + (diff > 0 ? "right" : "left") + " should do it.";
+                } else {
+                    modalIcon.innerText = "❌";
+                    modalDiffVal.style.color = "#e03131";
+                    modalVerdict.innerText = "Significantly tilted! Please adjust the monitor's alignment.";
+                }
+
+                if (diagnoseModal) { diagnoseModal.classList.add('active'); }
+            }, 500);
+        }
+    });
+
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', () => {
+            if (diagnoseModal) { diagnoseModal.classList.remove('active'); }
+            
+            // 1. Kalibrierung zurücksetzen, damit es wieder von vorne losgeht
+            isCalibrated = false;
+
+            // 2. Button-Text und Farbe wieder auf Schritt 1 setzen
+            caliBtn.innerText = "1. Auf Tisch legen & Nullen";
+            caliBtn.style.backgroundColor = "#1c7ed6";
+            caliBtn.style.color = "#ffffff";
+
+            // 3. Dem Server sagen, dass das Handy wieder auf Schritt 1 springen soll
+            socket.emit('pc-step-1'); 
+        });
+    }
+
+    const legalModal = document.getElementById('legal-modal');
+    const legalTitle = document.getElementById('legal-title');
+    const legalText = document.getElementById('legal-text');
+    const closeLegalBtn = document.getElementById('close-legal-btn');
+
+    const impressumInhalt = `**Legal Notice (Impressum)**\n\nTeethawat Kanpai\nSonnenscheinpfad 64\n12277, Berlin, Germany\n\n**Contact:**\nE-Mail: teethawatkanpai@gmail.com\nPhone: +49 172 4134526\n\nResponsible for content under Section 5 Abs. 1 DDG:\nTeethawat Kanpai (Address above)`;
+    const datenschutzInhalt = `**Privacy Policy**\n\n**1. General Information**\nThe operators of this website take the protection of your personal data very seriously. We treat your personal data confidentially and in accordance with statutory data protection regulations.\n\n**2. Data Collection on Our Website**\nOur application uses WebSockets to transfer the real-time sensor measurements from your smartphone to your PC. During this process, IP addresses are processed temporarily to assign both devices to the same measurement session. No data is stored permanently, logged, or analyzed.\n\n**3. Hosting (Render)**\nThis website is hosted by an external service provider (Render.com). Personal data processed on this website is handled on the host's servers. This primarily includes IP addresses, as well as technical meta and communication data necessary for secure app architecture.`;
+
+    document.getElementById('link-impressum').addEventListener('click', () => {
+        legalTitle.innerText = "Legal Notice";
+        legalText.innerText = impressumInhalt;
+        legalModal.classList.add('active');
+    });
+
+    document.getElementById('link-datenschutz').addEventListener('click', () => {
+        legalTitle.innerText = "Privacy Policy";
+        legalText.innerText = datenschutzInhalt;
+        legalModal.classList.add('active');
+    });
+
+    closeLegalBtn.addEventListener('click', () => {
+        legalModal.classList.remove('active');
+    });
+    </script>
+</body>
+</html>
