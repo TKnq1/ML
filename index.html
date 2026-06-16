@@ -44,24 +44,68 @@
 
         .brand-header {
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 12px;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
         }
 
-        .brand-logo {
-            width: 32px;
-            height: 32px;
-            object-fit: contain;
+        /* Professionelles CSS-Icon statt einem fehlerhaften Bild */
+        .brand-icon-wrapper {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #1c7ed6, #1565c0);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(28, 126, 214, 0.2);
+        }
+
+        .brand-icon-crosshair {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .brand-icon-crosshair::before, .brand-icon-crosshair::after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 255, 255, 0.9);
+        }
+        /* Horizontale Linie im Icon */
+        .brand-icon-crosshair::before {
+            top: 8px; left: -4px; width: 26px; height: 2px;
+        }
+        /* Vertikale Linie im Icon */
+        .brand-icon-crosshair::after {
+            left: 8px; top: -4px; width: 2px; height: 26px;
         }
 
         h1 {
-            font-size: 24px;
+            font-size: 26px;
             font-weight: 700;
             margin: 0;
             color: #1a1d20;
-            letter-spacing: -0.5px;
+            letter-spacing: -0.8px;
+        }
+
+        .badge-pro {
+            background: rgba(28, 126, 214, 0.1);
+            color: #1c7ed6;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 6px;
+            border: 1px solid rgba(28, 126, 214, 0.2);
+            display: inline-block;
+            vertical-align: middle;
         }
 
         .subtitle {
@@ -252,8 +296,10 @@
         </div>
 
         <div class="brand-header">
-            <img src="logo.png" alt="Monitor Leveler Pro Logo" class="brand-logo" onerror="this.style.display='none'">
-            <h1>Monitor Leveler <span style="color: #1c7ed6; font-size: 12px; vertical-align: super; font-weight: normal;">PRO</span></h1>
+            <div class="brand-icon-wrapper">
+                <div class="brand-icon-crosshair"></div>
+            </div>
+            <h1>Monitor Leveler <span class="badge-pro">Pro</span></h1>
         </div>
         <div class="subtitle">Scan the QR code with your phone to connect</div>
 
